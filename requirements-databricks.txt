@@ -1,0 +1,5 @@
+-r requirements.txt
+azure-identity>=1.17
+azure-keyvault-secrets>=4.8
+databricks-sqlalchemy>=2.0
+pyspark==4.1.1
