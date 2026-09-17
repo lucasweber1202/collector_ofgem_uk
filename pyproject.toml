@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "collector-ofgem-uk"
+version = "0.1.0"
+description = "Canonical standalone UK inflation predictor collector skeleton"
+requires-python = ">=3.11"
+dependencies = [
+  "httpx[socks]>=0.27",
+  "psycopg2-binary>=2.9",
+  "sqlalchemy>=2.0",
+  "openpyxl>=3.1,<4",
+]
+
+[project.optional-dependencies]
+databricks = ["azure-identity>=1.17", "azure-keyvault-secrets>=4.8", "databricks-sqlalchemy>=2.0", "pyspark==4.1.1"]
+dev = ["mypy>=1.11", "pytest>=8.0", "ruff>=0.6"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.mypy]
+python_version = "3.11"
+files = ["main.py", "scripts", "tests"]
+explicit_package_bases = true
+mypy_path = "."
+no_implicit_optional = true
+disallow_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = ["azure.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["openpyxl", "openpyxl.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "scripts.databricks_engine"
+warn_unused_ignores = false
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = ["*.md"]
