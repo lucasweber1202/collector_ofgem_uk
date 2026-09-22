@@ -289,3 +289,48 @@ def get_series_as_of(
             f"Look-ahead detected for {series_id}: {len(leaked)} rows with available_at > {as_of}"
         )
     return result
+
+
+_REFRESH_SNAPSHOT_SQL = text(
+    f"""UPDATE {_TABLE} SET source_snapshot_id = :source_snapshot_id
+WHERE series_id = :series_id AND reference_date = :reference_date
+AND vintage_date = :vintage_date"""
+)
+
+
+def refresh_snapshot_provenance(conn: Connection, rows: list[dict[str, Any]]) -> int:
+    """Repoint a same-day-revised vintage at the snapshot that now explains it.
+
+    A same-day revision overwrites today's ``time_series`` row in place, so the
+    availability key is unchanged and no new row is owed. But its
+    ``source_snapshot_id`` would still name the earlier file of the same day,
+    which no longer explains the stored value.
+
+    Only provenance moves. ``available_at``, ``availability_basis`` and
+    ``release_date`` are the point-in-time guarantees and stay immutable: the
+    observation genuinely did first become knowable when this collector first
+    saw it today, and a later revision on the same day does not change that.
+    """
+    if not rows:
+        return 0
+    total = len(rows)
+    total_batches = (total + BATCH_SIZE - 1) // BATCH_SIZE
+    logger.info(
+        "Availability: repointing %d same-day vintages in %d batches of %d",
+        total,
+        total_batches,
+        BATCH_SIZE,
+    )
+    written = 0
+    for index, start in enumerate(range(0, total, BATCH_SIZE), start=1):
+        batch = rows[start : start + BATCH_SIZE]
+        conn.execute(_REFRESH_SNAPSHOT_SQL, batch)
+        written += len(batch)
+        logger.info(
+            "Availability provenance batch %d/%d (%d/%d rows)",
+            index,
+            total_batches,
+            written,
+            total,
+        )
+    return total

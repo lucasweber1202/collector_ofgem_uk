@@ -14,6 +14,7 @@ from scripts.config import (
     TIME_SERIES_TABLE,
 )
 from scripts.db import build_engine
+from scripts.legacy_schema import migrate_legacy_metadata
 
 # PostgreSQL and Databricks SQL share no spelling for a 64-bit float. Spark's
 # parser lists DOUBLE as the only alias for DoubleType, so Databricks rejects
@@ -25,6 +26,11 @@ DOUBLE_TYPES = {"postgresql": "DOUBLE PRECISION"}
 DEFAULT_DOUBLE_TYPE = "DOUBLE"
 
 CREATE_SCHEMA = f"CREATE SCHEMA IF NOT EXISTS {SCHEMA_NAME}"
+
+# Legacy metadata columns that must be copied into a sidecar before they
+# are dropped, as {column: sidecar table}. `source_id` needs no entry:
+# every row of it is already stored in source_snapshots.
+LEGACY_METADATA_ARCHIVE: dict[str, str] = {}
 
 CREATE_METADATA_TABLE = f"""
 CREATE TABLE IF NOT EXISTS {SCHEMA_NAME}.{METADATA_TABLE} (
@@ -127,6 +133,9 @@ def init_db(engine: Engine) -> None:
             CREATE_LOGS_TABLE,
         ):
             conn.execute(text(statement))
+        # CREATE TABLE IF NOT EXISTS leaves a pre-canonical table untouched,
+        # so the live shape is checked against the standardized columns.
+        migrate_legacy_metadata(conn, LEGACY_METADATA_ARCHIVE)
 
 
 if __name__ == "__main__":
