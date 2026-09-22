@@ -5,17 +5,23 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "collector-ofgem-uk"
 version = "0.1.0"
-description = "Canonical standalone UK inflation predictor collector skeleton"
+description = "Collects Ofgem Energy Price Cap final levelised cap-rate series by fuel, region and payment method"
 requires-python = ">=3.11"
+readme = "README.md"
+license = { text = "Proprietary" }
+authors = [{ name = "Macrobond Inhouse" }]
 dependencies = [
-  "httpx[socks]>=0.27",
+  "azure-identity>=1.12",
+  "azure-keyvault-secrets>=4.4",
+  "databricks-sqlalchemy>=0.2.8",
   "psycopg2-binary>=2.9",
+  "pyspark==4.1.1",
+  "httpx>=0.27",
   "sqlalchemy>=2.0",
-  "openpyxl>=3.1,<4",
+  "pandas>=2.0",
+  "openpyxl>=3.1",
 ]
-
 [project.optional-dependencies]
-databricks = ["azure-identity>=1.17", "azure-keyvault-secrets>=4.8", "databricks-sqlalchemy>=2.0", "pyspark==4.1.1"]
 dev = ["mypy>=1.11", "pytest>=8.0", "ruff>=0.6"]
 
 [tool.pytest.ini_options]
