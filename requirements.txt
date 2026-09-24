@@ -6,7 +6,7 @@ psycopg2-binary>=2.9
 pyspark==4.1.1
 
 # Common across collectors — keep unless you have a reason not to
-httpx>=0.27
+httpx[socks]>=0.27
 sqlalchemy>=2.0
 pandas>=2.0
 

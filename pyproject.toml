@@ -16,7 +16,7 @@ dependencies = [
   "databricks-sqlalchemy>=0.2.8",
   "psycopg2-binary>=2.9",
   "pyspark==4.1.1",
-  "httpx>=0.27",
+  "httpx[socks]>=0.27",
   "sqlalchemy>=2.0",
   "pandas>=2.0",
   "openpyxl>=3.1",

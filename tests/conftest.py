@@ -1,7 +1,16 @@
-"""Shared fixtures: an isolated SQLite stand-in carrying the shipped DDL."""
+"""Shared fixtures: a disposable database carrying the shipped DDL.
+
+By default the stand-in is SQLite, which is fast and needs no server. SQLite is
+not the deployment target, though: it accepts types and constraints PostgreSQL
+rejects, so a green SQLite run does not prove the shipped DDL, the primary keys
+or the vintage semantics hold in production. Export POSTGRES_TEST_URL and the
+whole suite -- idempotency, revisions, as-of queries -- runs against a real
+PostgreSQL server instead, in a disposable schema that is dropped afterwards.
+"""
 
 from __future__ import annotations
 
+import os
 import sqlite3
 from collections.abc import Iterator
 from datetime import UTC, date, datetime
@@ -57,11 +66,33 @@ def build_sqlite_engine(tmp_path: Path) -> Engine:
     return engine
 
 
+def build_postgres_engine(url: str) -> Engine:
+    """Create the shipped tables on a real PostgreSQL server.
+
+    This runs the collector's own init_db(), so the DDL under test is exactly
+    the DDL that ships -- including the PostgreSQL spelling of the 64-bit float
+    and the real primary keys, neither of which SQLite enforces faithfully.
+    """
+    engine = create_engine(url)
+    with engine.begin() as conn:
+        conn.execute(text(f"DROP SCHEMA IF EXISTS {SCHEMA_NAME} CASCADE"))
+    init_db.init_db(engine)
+    return engine
+
+
 @pytest.fixture
 def engine(tmp_path: Path) -> Iterator[Engine]:
-    """Yield a disposable database carrying the shipped DDL."""
-    created = build_sqlite_engine(tmp_path)
+    """Yield a disposable database carrying the shipped DDL.
+
+    POSTGRES_TEST_URL selects a real PostgreSQL server; without it the suite
+    falls back to the SQLite stand-in so it still runs with no server present.
+    """
+    url = os.getenv("POSTGRES_TEST_URL")
+    created = build_postgres_engine(url) if url else build_sqlite_engine(tmp_path)
     try:
         yield created
     finally:
+        if url:
+            with created.begin() as conn:
+                conn.execute(text(f"DROP SCHEMA IF EXISTS {SCHEMA_NAME} CASCADE"))
         created.dispose()
