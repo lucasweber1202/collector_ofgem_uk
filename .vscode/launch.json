@@ -1,3 +1,4 @@
+
 {
     // Use IntelliSense to learn about possible attributes.
     // Hover to view descriptions of existing attributes.
@@ -20,19 +21,27 @@
             "type": "debugpy",
             "request": "launch",
             "module": "streamlit",
-            "args": ["run", "${file}"],
+            "args": [
+                "run", 
+                "${file}"
+            ],
             "console": "integratedTerminal",
             "justMyCode": false,
             "subProcess": true,
             "pathMappings": [
-                { "localRoot": "${workspaceFolder}" }
+                {
+                "localRoot": "${workspaceFolder}",
+                }
             ]
         },
         {
             "name": "Python Debugger: Remote Attach",
             "type": "debugpy",
             "request": "attach",
-            "connect": { "host": "localhost", "port": 5678 },
+            "connect": {
+                "host": "localhost",
+                "port": 5678
+            },
             "pathMappings": [
                 {
                     "localRoot": "${workspaceFolder}",

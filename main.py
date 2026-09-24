@@ -64,8 +64,11 @@ def _setup_logging(level: str) -> io.StringIO:
 
 def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Collect one UK inflation predictor source.")
-    parser.add_argument("--log-level", default=LOG_LEVEL)
-    return parser.parse_args(argv)
+    parser.add_argument(
+        "--log-level",
+        default=LOG_LEVEL,
+        help="Override log level (DEBUG, INFO, WARNING, ERROR).",
+    )
     parser.add_argument(
         "--start-date",
         type=date.fromisoformat,
@@ -75,6 +78,7 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
             "rewinds from the latest stored reference_date."
         ),
     )
+    return parser.parse_args(argv)
 
 
 def _rewind(anchor: date, months: int) -> date:
@@ -188,6 +192,20 @@ def collect_source(engine: Engine, start_date: date) -> None:
     kept_observations, kept_catalog, _usability = filter_usable_series(
         data.observations, data.catalog, datetime.now(UTC).date()
     )
+    # A run that keeps no series persists nothing, so returning normally
+    # here would exit 0 and read as a successful collection. That is how a
+    # source whose published window is shorter than min_history_years stays
+    # silently empty indefinitely. Fail loudly and name the verdict counts,
+    # so an empty load is a decision rather than a discovery months later.
+    if data.observations and not _usability.kept:
+        raise ValueError(
+            "Usable-series filter dropped every series "
+            f"(stale={len(_usability.stale)} "
+            f"short_history={len(_usability.short_history)} "
+            f"empty={len(_usability.empty)}). Nothing would be persisted: either "
+            "the source stopped publishing usable history, or the configured "
+            "thresholds do not match this source's published window."
+        )
     # This source publishes a whole file per run and cannot be queried by
     # date, so the incremental window is applied after parsing while the
     # external --start-date contract stays the fleet's.
