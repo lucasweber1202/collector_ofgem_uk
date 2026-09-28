@@ -43,9 +43,9 @@ CREATE TABLE IF NOT EXISTS {SCHEMA_NAME}.{METADATA_TABLE} (
     first_observation DATE,
     last_observation DATE,
     observation_count INTEGER NOT NULL,
-    eco_group VARCHAR(250),
+    eco_group VARCHAR(250) NOT NULL,
     source_url VARCHAR(1000) NOT NULL,
-    last_publish_date DATE,
+    last_publish_date DATE NOT NULL,
     collected_at TIMESTAMP NOT NULL,
     CONSTRAINT pk_metadata PRIMARY KEY (series_id)
 )
