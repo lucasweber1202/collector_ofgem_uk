@@ -186,7 +186,8 @@ def upsert_metadata(
                 "observation_count": int(history["observation_count"]),
                 "eco_group": fields["eco_group"],
                 "source_url": fields["source_url"],
-                "last_publish_date": fields.get("last_publish_date"),
+                "last_publish_date": _as_date(fields.get("last_publish_date"))
+                or _as_date(history["last_collected_at"]),
                 "collected_at": collected_at,
             }
         )
